@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header>
+    <h1>Network Traffic Analyzer</h1>
+    <a href="/dashboard" class="back-btn">Back to Dashboard</a>
+</header>
+
+<div class="tool-container">
+    <div class="chart-container" style="max-width: 400px; margin: auto;">
+        <canvas id="trafficChart"></canvas>
+    </div>
+
+    <div class="stats-container">
+        <h2>Live Packet Statistics</h2>
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <div class="dns-container">
+        <h2>Source & Destination DNS Logs</h2>
+        <table class="dns-table">
+            <thead>
+                <tr><th>Source IP</th><th>Source DNS</th><th>Destination IP</th><th>Destination DNS</th></tr>
+            </thead>
+            <tbody id="dnsTableBody">
+                <!-- DNS entries will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add this new section for suspicious packets -->
+    <div class="suspicious-container">
+        <h2>Suspicious Packet Alerts</h2>
+        <div class="alerts-container" id="alertsContainer">
+            <!-- Alerts will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    const statsGrid = document.getElementById('statsGrid');
+    const dnsTableBody = document.getElementById('dnsTableBody');
+    const alertsContainer = document.getElementById('alertsContainer');
+
+    const trafficChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    '#3498db', '#2ecc71', '#e74c3c', '#f39c12', 
+                    '#9b59b6', '#1abc9c', '#d35400', '#34495e'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    function updateTrafficData() {
+        fetch('/api/packet-connections')
+            .then(response => response.json())
+            .then(data => {
+                const protocols = data.protocols;
+                const connections = data.connections;
+                const suspicious = data.suspicious || [];
+
+                // Update chart
+                trafficChart.data.labels = Object.keys(protocols);
+                trafficChart.data.datasets[0].data = Object.values(protocols);
+                trafficChart.update();
+
+                // Update stats grid
+                statsGrid.innerHTML = '';
+                for (const [protocol, count] of Object.entries(protocols)) {
+                    const statCard = document.createElement('div');
+                    statCard.className = 'stat-card';
+                    statCard.innerHTML = `
+                        <h3>${protocol}</h3>
+                        <p>${count}</p>
+                    `;
+                    statsGrid.appendChild(statCard);
+                }
+
+                // Update DNS table
+                dnsTableBody.innerHTML = '';
+                connections.forEach(conn => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${conn.src}</td>
+                        <td>${conn.src_host}</td>
+                        <td>${conn.dst}</td>
+                        <td>${conn.dst_host}</td>
+                    `;
+                    dnsTableBody.appendChild(row);
+                });
+
+                // Update suspicious packets alerts
+                alertsContainer.innerHTML = '';
+                if (suspicious.length > 0) {
+                    suspicious.forEach(alert => {
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert-card';
+                        alertDiv.innerHTML = `
+                            <div class="alert-header">
+                                <span class="alert-time">${alert.timestamp}</span>
+                                <span class="alert-severity">Suspicious</span>
+                            </div>
+                            <div class="alert-content">
+                                <p><strong>From:</strong> ${alert.src} <strong>To:</strong> ${alert.dst}</p>
+                                <p><strong>Detection:</strong> ${alert.flags.join(', ')}</p>
+                            </div>
+                        `;
+                        alertsContainer.appendChild(alertDiv);
+                    });
+                } else {
+                    alertsContainer.innerHTML = '<div class="no-alerts">No suspicious packets detected</div>';
+                }
+            });
+    }
+
+    updateTrafficData();
+    setInterval(updateTrafficData, 5000);
+</script>
+
+<style>
+    /* existing CSS */
+    .suspicious-container {
+        margin-top: 2rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .alert-card {
+        background: white;
+        border-left: 4px solid #e74c3c;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .alert-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .alert-time {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    .alert-severity {
+        background: #e74c3c;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .no-alerts {
+        text-align: center;
+        color: #7f8c8d;
+        padding: 1rem;
+    }
+</style>
+
+{% endblock %}

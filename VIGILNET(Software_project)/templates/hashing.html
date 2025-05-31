@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header>
+    <h1>Hash Generator</h1>
+    <a href="/dashboard" class="back-btn">Back to Dashboard</a>
+</header>
+
+<div class="tool-container">
+    <form id="hashingForm" class="tool-form">
+        <div class="form-group">
+            <label for="text">Input Text:</label>
+            <textarea id="text" name="text" rows="4" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="algorithm">Algorithm:</label>
+            <select id="algorithm" name="algorithm" required>
+                <option value="md5">MD5</option>
+                <option value="sha1">SHA-1</option>
+                <option value="sha256" selected>SHA-256</option>
+                <option value="sha512">SHA-512</option>
+            </select>
+        </div>
+        <button type="submit">Generate Hash</button>
+    </form>
+
+    <div class="results">
+        <h3>Hash Result:</h3>
+        <textarea id="hashOutput" rows="4" readonly></textarea>
+    </div>
+</div>
+
+<script>
+    document.getElementById('hashingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        try {
+            const response = await fetch('/hashing/generate', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            document.getElementById('hashOutput').value = data.hash;
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    });
+</script>
+{% endblock %}

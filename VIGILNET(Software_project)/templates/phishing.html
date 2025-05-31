@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header>
+    <h1>Phishing URL Checker</h1>
+    <a href="/dashboard" class="back-btn">Back to Dashboard</a>
+</header>
+
+<div class="tool-container">
+    <form id="phishingForm" class="tool-form">
+        <div class="form-group">
+            <label for="url">URL to Check:</label>
+            <input type="url" id="url" name="url" placeholder="https://example.com" required>
+        </div>
+        <button type="submit">Check URL</button>
+    </form>
+
+    <div id="results" class="results">
+        <!-- Results will be displayed here -->
+    </div>
+</div>
+
+<script>
+    document.getElementById('phishingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '<p>Checking URL...</p>';
+        
+        try {
+            const response = await fetch('/phishing/check', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            let html = '<h3>Results:</h3>';
+            if (data.error) {
+                html += `<p class="error">${data.error}</p>`;
+            } else {
+                html += `
+                    <p><strong>Domain:</strong> ${data.domain}</p>
+                    <p><strong>Suspicious:</strong> ${data.suspicious ? 'Yes ⚠️' : 'No ✅'}</p>
+                    <p><strong>In Phishing DB:</strong> ${data.in_phishing_db ? 'Yes ⚠️' : 'No ✅'}</p>
+                    <p><strong>Message:</strong> ${data.message}</p>
+                `;
+            }
+            resultsDiv.innerHTML = html;
+        } catch (error) {
+            console.error('Error:', error);
+            resultsDiv.innerHTML = '<p class="error">An error occurred. Please try again.</p>';
+        }
+    });
+</script>
+{% endblock %}

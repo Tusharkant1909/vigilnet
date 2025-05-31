@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header>
+    <h1>Security Toolkit Dashboard</h1>
+    <a href="/logout" class="logout-btn">Logout</a>
+</header>
+
+<div class="tool-menu">
+    <div class="tool-card" onclick="window.location.href='/traffic'">
+        <h2>Network Traffic Analyzer</h2>
+        <p>Monitor and analyze network packets in real-time</p>
+    </div>
+    
+    <div class="tool-card" onclick="window.location.href='/vulnerability'">
+        <h2>Vulnerability Scanner</h2>
+        <p>Scan for open ports and common vulnerabilities</p>
+    </div>
+    
+    <div class="tool-card" onclick="window.location.href='/encryption'">
+        <h2>Encryption Tool</h2>
+        <p>Encrypt and decrypt sensitive data</p>
+    </div>
+    
+    <div class="tool-card" onclick="window.location.href='/phishing'">
+        <h2>Phishing Checker</h2>
+        <p>Check URLs for potential phishing attempts</p>
+    </div>
+    
+    <div class="tool-card" onclick="window.location.href='/hashing'">
+        <h2>Hash Generator</h2>
+        <p>Generate hashes using various algorithms</p>
+    </div>
+
+    <!--  New History Section -->
+    <div class="tool-card" onclick="window.location.href='/history'">
+        <h2>User Activity History</h2>
+        <p>View your activity from the last 2 days</p>
+    </div>
+</div>
+{% endblock %}
